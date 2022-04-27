@@ -2,6 +2,27 @@ name: Reusable Grafana Terraform workflow Production
 
 on:
   workflow_call:
+    inputs:
+      # "[\"terraform\",\"${{ github.event.repository.name }}\",\"production\"]"
+      annotation_tags:
+        type: string
+        required: true
+      # "Alerts Statistics" 
+      dashboard_name:
+        type: string
+        required: true
+      # https://grafana.domain.com/api 
+      grafana_url:
+        type: string
+        required: true
+      # "Firing 'Warning' alerts"
+      panel_name:
+        type: string
+        required: true
+      # "[\"self-hosted\",\"linux\",\"x64\",\"production\",\"terraform\",\"workflows\"]"
+      runner_tags:
+        type: string
+        required: true
     secrets:
       grafana_token:
         required: true
@@ -10,12 +31,12 @@ jobs:
   grafana_terraform_annotation:
     name: "Add Terraform annotations to Grafana"
     env:
-      GRAFANA_API_URL: https://grafana.namecheapcloud.net/api
+      GRAFANA_API_URL: ${{ inputs.grafana_url }}
       GRAFANA_API_TOKEN: ${{ secrets.grafana_token }}
       FULL_COMMIT_MSG: ${{ github.event.head_commit.message }}
-      DASHBOARD_NAME: "Alerts Statistics"
-      PANEL_NAME: "Firing 'Warning' alerts"
-    runs-on: [self-hosted, linux, x64, production, terraform, workflows]
+      DASHBOARD_NAME: ${{ inputs.dashboard_name }}
+      PANEL_NAME: ${{ inputs.panel_name }}
+    runs-on: ${{ fromJSON(inputs.runner_tags) }}
     steps:
     - name: Install dependencies
       run: |
@@ -61,7 +82,7 @@ jobs:
         {
           "dashboardId":${{ steps.ids.outputs.dashboard }},
           "panelId":${{ steps.ids.outputs.panel }},
-          "tags": ["terraform","${{ github.event.repository.name }}","production"],
+          "tags": ${{ inputs.annotation_tags }},
           "text":"${{ steps.ids.outputs.text }}"
         }
         EOF
